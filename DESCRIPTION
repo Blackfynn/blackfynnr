@@ -10,11 +10,12 @@ License: Apache License 2.0
 Encoding: UTF-8
 LazyData: true
 Imports:
-    jsonlite,
     httr,
     ini,
     magrittr
 RoxygenNote: 6.0.1
 Collate: 
     'models.R'
+    'comms.R'
     'core.R'
+    'timeseries.R'

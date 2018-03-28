@@ -2,5 +2,9 @@
 
 export(Blackfynn)
 exportClasses(BFClient)
+exportClasses(BFDataPackage)
+exportClasses(BFDataset)
+exportClasses(BFTimeSeries)
 exportMethods(bf_datasets)
+exportMethods(contents)
 exportMethods(show)

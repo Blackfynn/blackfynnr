@@ -1,8 +1,24 @@
+#' @include models.R
+#' @include comms.R
+NULL
+
 #' bf_datasets
 #'
-#' @include models.R
-#' @param object BFCLient object
-setGeneric("bf_datasets", function(object) {NULL})
+#' @param client BFCLient object
+setGeneric("bf.datasets", function(object) {NULL})
+
+#' contents
+#'
+#' @param client BFCLient object
+#' @param target Object for which contents should be returned
+setGeneric("contents", function(client, target) {NULL})
+
+#' contents
+#'
+#' @param client BFCLient object
+#' @param id String with the ID of a data package
+setGeneric("contents.id", function(client, id) {NULL})
+
 
 #' Wrapper function BFClient
 #'
@@ -29,17 +45,26 @@ setMethod("initialize", "BFClient",
             if (identical(.Object@scope, character(0))) {
               .Object@scope <- ini$global$default_profile
             }
-            api.key <- checkIni[[.Object@scope]]$api_token
-            api.secret <- checkIni[[.Object@scope]]$api_secret
-            if (identical(api.key, NULL)){
+            api.key <- ini[[.Object@scope]]$api_token
+            api.secret <- ini[[.Object@scope]]$api_secret
+            if (identical(api.key, NULL)) {
               stop(paste("Scope", .Object@scope, "unknown."))
+            }
+
+            api.host = ini[[.Object@scope]]$api_host
+            if (identical(api.host, NULL)) {
+              .Object@api.host <- "https://api.blackfynn.io"
+            } else {
+              .Object@api.host <- api.host
             }
 
             # Get Session token
             query <- list("tokenId" = api.key, "secret" = api.secret)
-            response <- POST("https://api.blackfynn.io/account/api/session",
-                             body = query, encode = "json",
+            url <- paste(.Object@api.host,"/account/api/session",sep="")
+
+            response <- POST(url, body = query, encode = "json",
                              content_type_json(), accept_json()) %>% content()
+
 
             .Object@org.id <- response$organization
             .Object@session.token <- response$session_token
@@ -48,25 +73,43 @@ setMethod("initialize", "BFClient",
                                  "Authorization" = paste("Bearer",
                                                          response$session_token))
             # Get Organization
-            url <- paste("https://api.blackfynn.io/organizations/",
+            url <- paste(.Object@api.host,"/organizations/",
                          response$organization, sep = "")
 
             .Object@org <- GET(url, add_headers(.headers = .Object@headers)) %>%
               content() %$% organization %$% name
 
+            cat('Profile:',.Object@scope,
+                '\nHost:', .Object@api.host,
+                '\nOrganization:', .Object@org)
             .Object
           })
 
-#' Show Blackfynn Client Object
+#' @describeIn BFClient
+#'     Shows a representation of a Blackfynn Client object.
 #'
-#' This method renders objects of the BFClient class
-#'
-#' @describeIn BFClient Shows a representation of a Blackfynn Client object.
+#' @param object BFClient object
 #' @export
 setMethod("show", "BFClient",
           function(object) {
             cat("---Blackfynn Client---\n")
             cat("Organization: ", object@org,"\n")
+            cat("----------------------\n")
+          }
+)
+
+#' @describeIn BFDataset
+#'     Shows a representation of a Blackfynn Dataset object.
+#'
+#' @param object BFClient object
+#' @export
+setMethod("show", "BFDataset",
+          function(object) {
+            cat("---Blackfynn Dataset---\n")
+            cat("id:   ", object@id,"\n")
+            cat("name: ", object@name,"\n")
+            cat("description: ", object@description,"\n")
+            cat("size: ", object@size,"MB\n")
             cat("----------------------\n")
           }
 )
@@ -78,10 +121,133 @@ setMethod("show", "BFClient",
 #' @param object BFClient object
 #'
 #' @export
-setMethod("bf_datasets", "BFClient",
+setMethod("bf.datasets", "BFClient",
           function(object) {
-            url <- paste("https://api.blackfynn.io/datasets/organization/",
-                         object@org.id, sep = "")
-            response <- GET(url, add_headers(.headers = object@headers))
-            response
+            response <- bf.get(object, "/datasets/", list())
+
+            ds <- vector("list", length(response))
+            i <- 1
+            for (item in response) {
+              content <- item$content
+              ds[[i]] <- new("BFDataset",
+                             name = content$name,
+                             description = "desc",
+                             id = content$id,
+                             size = item$storage/1000)
+              i <- i + 1
+            }
+
+            ds
           })
+
+#' @describeIn BFDataPackage
+#'     Shows a representation of a Blackfynn DataPackage object
+#'
+#' @param object BFClient object
+#' @export
+setMethod("show", "BFDataPackage",
+          function(object) {
+            cat("---Blackfynn Data Package---\n")
+            cat("id:   ", object@id,"\n")
+            cat("name: ", object@name,"\n")
+            cat("type: ", object@type,"\n")
+            cat("----------------------------\n")
+          }
+)
+
+#' @describeIn BFTimeSeries
+#'     Shows a representation of a Blackfynn Timeseries object
+#'
+#' @param object BFClient object
+#' @export
+setMethod("show", "BFTimeSeries",
+          function(object) {
+            cat("---Blackfynn Time Series---\n")
+            cat("id:   ", object@id,"\n")
+            cat("name: ", object@name,"\n")
+            cat("start: ", object@start,"\n")
+            cat("end: ", object@end,"\n")
+            cat("channels: ", object@channels,"\n")
+            cat("---------------------------\n")
+          }
+)
+
+#' @describeIn BFClient
+#'     Lists the content of a dataset
+#'
+#' @param client BFClient client
+#' @param target "BFDataset" Id of a Dataset, or Collection
+#' @export
+setMethod("contents", signature("BFClient", "BFDataset"),
+          function(client, target) {
+            url <- paste("/datasets/", target@id, sep = "")
+            response <- bf.get(client,url,list())
+
+            children <- response$children
+            packages <- vector("list", length(children))
+            i <- 1
+            for (item in children) {
+              content = item$content
+              packages[[i]] <- new("BFDataPackage",
+                                   id = content$id,
+                                   name = content$name
+                                   )
+              i <- i + 1
+            }
+            packages
+
+          })
+
+#' @describeIn BFDataPackage
+#'     Lists the content of a package/collection
+#'
+#' @param client BFClient client
+#' @param target "BFDataPackage" Id of a Dataset, or Collection
+#' @export
+setMethod("contents", signature("BFClient", "BFDataPackage"),
+          function(client, target) {
+            out <- contents(client, target@id)
+          })
+
+
+#' @describeIn BFClient
+#'     Get the contents of any object on Blackfynn
+#'
+#'     @param client BFClient client
+#'     @param id "Character" ID of an object in a dataset
+#'     @export
+setMethod("contents.id", signature("BFClient", "character"),
+          function(client, id) {
+            url <- paste("/packages/", target, sep = "")
+            response <- bf.get(client, url, list(include = "view",
+                                                 includeAncestors = TRUE))
+
+
+            children <- response$children
+            packages <- vector("list", length(children))
+            i <- 1
+            for (item in children) {
+              content = item$content
+              switch (content$packageType,
+                      "TimeSeries" = {
+                        packages[[i]] <- bf.create.ts(content)
+                      },
+                      "Collection" = {
+                        packages[[i]] <- new("BFDataPackage",
+                                             id = content$id,
+                                             name = content$name
+                        )
+                      },
+                      {
+                        packages[[i]] <- new("BFDataPackage",
+                                             id = content$id,
+                                             name = content$name
+                        )
+                      })
+              i <- i + 1
+            }
+            packages
+          })
+
+
+
