@@ -11,7 +11,7 @@ bf.delete(client, path, params)
 
 \item{path}{"character"}
 
-\item{params}{"character"}
+\item{params}{"list"}
 }
 \description{
 dev bf.delete

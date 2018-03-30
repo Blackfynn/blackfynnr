@@ -11,7 +11,7 @@ bf.put(client, path, params)
 
 \item{path}{"character"}
 
-\item{params}{"character"}
+\item{params}{"list"}
 }
 \description{
 bf.put

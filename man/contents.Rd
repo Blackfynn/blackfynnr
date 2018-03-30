@@ -7,9 +7,9 @@
 contents(client, target)
 }
 \arguments{
-\item{target}{Object for which contents should be returned}
+\item{client}{BFCLient object}
 
-\item{object}{BFCLient object}
+\item{target}{Object for which contents should be returned}
 }
 \description{
 contents

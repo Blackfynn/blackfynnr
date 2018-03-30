@@ -18,24 +18,17 @@ setMethod("show", "BFTimeSeries",
             cat("---------------------------\n")
           }
 )
-#'
-#' #' bf.create.ts
-#' #'
-#' #' @param resp
-#' setGeneric("bf.create.ts", function(resp) {NULL})
 
-#' @describeIn BFTimeSeries
+#' BFTimeSeries
 #'     Create a timeseries object
 #'
 #' @param resp response object from server
+#' @export
 setGeneric("bf.create.ts",
           function(resp) {
             ts <- new("BFTimeSeries",
-                       id = content$id,
-                       name = content$name
-
-                       # for (ch in content$channels)
-            )
+                       id = resp$content$id,
+                       name = resp$content$name)
             ts
 
           })

@@ -7,9 +7,9 @@
 contents.id(client, id)
 }
 \arguments{
-\item{id}{String with the ID of a data package}
+\item{client}{BFCLient object}
 
-\item{object}{BFCLient object}
+\item{id}{String with the ID of a data package}
 }
 \description{
 contents

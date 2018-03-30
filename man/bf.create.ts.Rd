@@ -2,10 +2,8 @@
 % Please edit documentation in R/timeseries.R
 \name{bf.create.ts}
 \alias{bf.create.ts}
-\title{#' bf.create.ts
-#'
-#' @param resp
-setGeneric("bf.create.ts", function(resp) {NULL})}
+\title{BFTimeSeries
+    Create a timeseries object}
 \usage{
 bf.create.ts(resp)
 }
@@ -13,8 +11,6 @@ bf.create.ts(resp)
 \item{resp}{response object from server}
 }
 \description{
-#' bf.create.ts
-#'
-#' @param resp
-setGeneric("bf.create.ts", function(resp) {NULL})
+BFTimeSeries
+    Create a timeseries object
 }

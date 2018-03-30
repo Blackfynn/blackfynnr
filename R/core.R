@@ -5,7 +5,7 @@ NULL
 #' bf_datasets
 #'
 #' @param client BFCLient object
-setGeneric("bf.datasets", function(object) {NULL})
+setGeneric("bf.datasets", function(client) {NULL})
 
 #' contents
 #'
@@ -85,7 +85,7 @@ setMethod("initialize", "BFClient",
             .Object
           })
 
-#' @describeIn BFClient
+#'BFClient
 #'     Shows a representation of a Blackfynn Client object.
 #'
 #' @param object BFClient object
@@ -118,12 +118,12 @@ setMethod("show", "BFDataset",
 #'     Returns a list of Datasets for the organization.
 #'     This is mroe inof
 #'
-#' @param object BFClient object
+#' @param client BFClient object
 #'
 #' @export
 setMethod("bf.datasets", "BFClient",
-          function(object) {
-            response <- bf.get(object, "/datasets/", list())
+          function(client) {
+            response <- bf.get(client, "/datasets/", list())
 
             ds <- vector("list", length(response))
             i <- 1
@@ -218,35 +218,28 @@ setMethod("contents", signature("BFClient", "BFDataPackage"),
 #'     @export
 setMethod("contents.id", signature("BFClient", "character"),
           function(client, id) {
-            url <- paste("/packages/", target, sep = "")
-            response <- bf.get(client, url, list(include = "view",
+            url <- paste("/packages/", id, sep = "")
+            resp <- bf.get(client, url, list(include = "view",
                                                  includeAncestors = TRUE))
 
-
-            children <- response$children
-            packages <- vector("list", length(children))
-            i <- 1
-            for (item in children) {
-              content = item$content
-              switch (content$packageType,
-                      "TimeSeries" = {
-                        packages[[i]] <- bf.create.ts(content)
-                      },
-                      "Collection" = {
-                        packages[[i]] <- new("BFDataPackage",
-                                             id = content$id,
-                                             name = content$name
-                        )
-                      },
-                      {
-                        packages[[i]] <- new("BFDataPackage",
-                                             id = content$id,
-                                             name = content$name
-                        )
-                      })
-              i <- i + 1
-            }
-            packages
+            p.type <- resp$content$packageType
+            switch (p.type,
+                    "TimeSeries" = {
+                      cnt <- bf.create.ts(resp)
+                    },
+                    "Collection" = {
+                      cnt <- new("BFDataPackage",
+                                           id = resp$content$id,
+                                           name = resp$content$name
+                      )
+                    },
+                    {
+                      cnt <- new("BFDataPackage",
+                                           id = resp$content$id,
+                                           name = resp$content$name
+                      )
+                    })
+            cnt
           })
 
 
